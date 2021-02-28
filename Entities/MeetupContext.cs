@@ -9,7 +9,10 @@ namespace MeetupAPI.Entities
 {
     public class MeetupContext : DbContext
     {
-        private string _connectionString = "Server=(localdb)\\mssqllocaldb;Database=MeetupDb;Trusted_Connection=True;";
+        public MeetupContext(DbContextOptions<MeetupContext> options) : base(options)
+        {
+
+        }
 
         public DbSet<Role> Roles { get; set; }
         public DbSet<User> Users { get; set; }
@@ -35,9 +38,5 @@ namespace MeetupAPI.Entities
                 .WithOne(l => l.Meetup);
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlServer(_connectionString);
-        }
     }
 }

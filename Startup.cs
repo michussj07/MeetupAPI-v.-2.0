@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using AutoMapper;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -68,7 +69,10 @@ namespace MeetupAPI
             services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>(); ;
             services.AddControllers(options => options.Filters.Add(typeof(ExceptionFilter))).AddFluentValidation();
             services.AddScoped<IValidator<RegisterUserDto>, RegisterUserValidator>();
-            services.AddDbContext<MeetupContext>();
+
+            services.AddDbContext<MeetupContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+
             services.AddScoped<MeetupSeeder>();
             services.AddAutoMapper(this.GetType().Assembly);
             services.AddSwaggerGen(c =>
@@ -83,8 +87,9 @@ namespace MeetupAPI
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, MeetupSeeder meetupSeeder)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, MeetupSeeder meetupSeeder, MeetupContext context)
         {
+            RunMigrations(context);
             app.UseResponseCaching();
             app.UseStaticFiles();
             app.UseCors("FrontEndClient");
@@ -113,6 +118,15 @@ namespace MeetupAPI
             });
 
             meetupSeeder.Seed();
+        }
+
+        private void RunMigrations(MeetupContext context)
+        {
+            var pendingMigrations = context.Database.GetPendingMigrations();
+            if (pendingMigrations.Any())
+            {
+                context.Database.Migrate();
+            }
         }
     }
 }
